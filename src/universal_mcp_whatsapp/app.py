@@ -15,6 +15,8 @@ from universal_mcp_whatsapp.whatsapp import (
     send_audio_message as whatsapp_audio_voice_message,
     download_media as whatsapp_download_media,
 )
+import requests
+import os
 
 class WhatsappApp(APIApplication):
     """
@@ -22,6 +24,36 @@ class WhatsappApp(APIApplication):
     """
     def __init__(self, integration: Integration = None, **kwargs) -> None:
         super().__init__(name="whatsapp", integration=integration, **kwargs)
+        
+        if integration is None:
+            self._authenticate_whatsapp()
+    
+    def _authenticate_whatsapp(self):
+        """
+        Authenticate with WhatsApp API when no integration is available.
+        Makes a POST request to the auth endpoint.
+        """
+        try:
+            user_id = os.getenv('WHATSAPP_USER_ID', 'rishabh')
+            
+            auth_url = f"{os.getenv('WHATSAPP_API_BASE_URL', 'http://localhost:8080/api')}/auth"
+            
+            response = requests.post(
+                auth_url,
+                headers={"Content-Type": "application/json"},
+                json={"user_id": user_id},
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                print(f"✅ WhatsApp authentication successful for user: {user_id}")
+            else:
+                print(f"⚠️ WhatsApp authentication failed with status: {response.status_code}")
+                print(f"Response: {response.text}")
+                
+        except Exception as e:
+            print(f"❌ Error during WhatsApp authentication: {str(e)}")
+            print("Continuing without authentication...")
 
     
 

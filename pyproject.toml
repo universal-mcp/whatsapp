@@ -22,7 +22,8 @@ classifiers = [
 ]
 # Add runtime dependencies here if any are known upfront
 dependencies = [
-    "universal_mcp>=0.1.22",
+    "universal-mcp==0.1.24rc2",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]
