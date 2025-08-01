@@ -6,9 +6,12 @@ import os.path
 import requests
 import json
 from universal_mcp_whatsapp import audio
+from dotenv import load_dotenv
 
-MESSAGES_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'whatsapp-mcp', 'whatsapp-bridge', 'store', 'messages.db')
-WHATSAPP_API_BASE_URL = "http://localhost:8080/api"
+load_dotenv()
+
+MESSAGES_DB_PATH = os.getenv('WHATSAPP_DB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'whatsapp-mcp', 'whatsapp-bridge', 'store', 'messages.db'))
+WHATSAPP_API_BASE_URL = os.getenv('WHATSAPP_API_BASE_URL', "http://localhost:8080/api")
 
 @dataclass
 class Message:
