@@ -35,8 +35,7 @@ class WhatsappApp(APIApplication):
         """
         try:
             user_id = os.getenv('AGENTR_API_KEY')
-            
-            auth_url = f"{os.getenv('WHATSAPP_API_BASE_URL', 'http://localhost:8080/api')}/auth"
+            auth_url = f"{os.getenv('WHATSAPP_API_BASE_URL')}/api/auth"
             
             response = requests.post(
                 auth_url,
@@ -46,14 +45,24 @@ class WhatsappApp(APIApplication):
             )
             
             if response.status_code == 200:
-                print(f"✅ WhatsApp authentication successful for user: {user_id}")
+                result = response.json()
+                if result.get("status") == "qr_required":
+                    qr_url = f"{os.getenv('WHATSAPP_API_BASE_URL')}/api/qr?user_id={user_id}"
+                    print(f"⚠️ QR code required for user: {user_id}")
+                    print(f"🔗 Visit: {qr_url}")
+                    return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
+                elif result.get("status") == "connected":
+                    print(f"✅ User {user_id} already authenticated")
+                    return True
             else:
                 print(f"⚠️ WhatsApp authentication failed with status: {response.status_code}")
                 print(f"Response: {response.text}")
+                return False
                 
         except Exception as e:
             print(f"❌ Error during WhatsApp authentication: {str(e)}")
             print("Continuing without authentication...")
+            return False
 
     
 
@@ -475,11 +484,21 @@ class WhatsappApp(APIApplication):
                 "message": "Failed to download media",
             }
 
+    def authenticate_whatsapp(self) -> Dict[str, Any]:
+        """
+        Authenticate with WhatsApp API. This tool should be called when WhatsApp integration is not available in AgentR.
+        
+        Returns:
+            Dict[str, Any]: Authentication result with status and QR URL if needed
+        """
+        return self._authenticate_whatsapp()
+
     def list_tools(self):
         """
         Lists the available tools (methods) for this application.
         """
         return [
+            self.authenticate_whatsapp,
             self.search_contacts,
             self.list_messages,
             self.list_chats,
