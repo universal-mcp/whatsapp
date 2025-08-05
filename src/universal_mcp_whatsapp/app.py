@@ -34,7 +34,7 @@ class WhatsappApp(APIApplication):
         Makes a POST request to the auth endpoint.
         """
         try:
-            user_id = os.getenv('WHATSAPP_USER_ID', 'rishabh')
+            user_id = os.getenv('AGENTR_API_KEY')
             
             auth_url = f"{os.getenv('WHATSAPP_API_BASE_URL', 'http://localhost:8080/api')}/auth"
             
@@ -60,7 +60,7 @@ class WhatsappApp(APIApplication):
     def search_contacts(
         self,
         query: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Search WhatsApp contacts by name or phone number.
@@ -80,6 +80,7 @@ class WhatsappApp(APIApplication):
         """
         if query is None:
             raise ValueError("Missing required parameter 'query'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         contacts = whatsapp_search_contacts(query, user_id)
         return contacts
 
@@ -95,7 +96,7 @@ class WhatsappApp(APIApplication):
         include_context: bool = True,
         context_before: int = 1,
         context_after: int = 1,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Get WhatsApp messages matching specified criteria with optional context.
@@ -122,6 +123,7 @@ class WhatsappApp(APIApplication):
         Tags:
             whatsapp.messages, important
         """
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         messages = whatsapp_list_messages(
             after=after,
             before=before,
@@ -144,7 +146,7 @@ class WhatsappApp(APIApplication):
         page: int = 0,
         include_last_message: bool = True,
         sort_by: str = "last_active",
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Get WhatsApp chats matching specified criteria.
@@ -166,6 +168,7 @@ class WhatsappApp(APIApplication):
         Tags:
             whatsapp.chats, important
         """
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         chats = whatsapp_list_chats(
             query=query,
             limit=limit,
@@ -180,7 +183,7 @@ class WhatsappApp(APIApplication):
         self,
         chat_jid: str,
         include_last_message: bool = True,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Get WhatsApp chat metadata by JID.
@@ -201,13 +204,14 @@ class WhatsappApp(APIApplication):
         """
         if chat_jid is None:
             raise ValueError("Missing required parameter 'chat_jid'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         chat = whatsapp_get_chat(chat_jid, include_last_message, user_id)
         return chat
 
     def get_direct_chat_by_contact(
         self,
         sender_phone_number: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Get WhatsApp chat metadata by sender phone number.
@@ -227,6 +231,7 @@ class WhatsappApp(APIApplication):
         """
         if sender_phone_number is None:
             raise ValueError("Missing required parameter 'sender_phone_number'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         chat = whatsapp_get_direct_chat_by_contact(sender_phone_number, user_id)
         return chat
 
@@ -235,7 +240,7 @@ class WhatsappApp(APIApplication):
         jid: str,
         limit: int = 20,
         page: int = 0,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Get all WhatsApp chats involving the contact.
@@ -257,13 +262,14 @@ class WhatsappApp(APIApplication):
         """
         if jid is None:
             raise ValueError("Missing required parameter 'jid'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         chats = whatsapp_get_contact_chats(jid, limit, page, user_id)
         return chats
 
     def get_last_interaction(
         self,
         jid: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> str:
         """
         Get most recent WhatsApp message involving the contact.
@@ -283,6 +289,7 @@ class WhatsappApp(APIApplication):
         """
         if jid is None:
             raise ValueError("Missing required parameter 'jid'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         message = whatsapp_get_last_interaction(jid, user_id)
         return message
 
@@ -291,7 +298,7 @@ class WhatsappApp(APIApplication):
         message_id: str,
         before: int = 5,
         after: int = 5,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Get context around a specific WhatsApp message.
@@ -313,6 +320,7 @@ class WhatsappApp(APIApplication):
         """
         if message_id is None:
             raise ValueError("Missing required parameter 'message_id'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         context = whatsapp_get_message_context(message_id, before, after, user_id)
         return context
 
@@ -320,7 +328,7 @@ class WhatsappApp(APIApplication):
         self,
         recipient: str,
         message: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Send a WhatsApp message to a person or group. For group chats use the JID.
@@ -345,6 +353,7 @@ class WhatsappApp(APIApplication):
         if message is None:
             raise ValueError("Missing required parameter 'message'.")
         
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         # Call the whatsapp_send_message function with the unified recipient parameter
         success, status_message = whatsapp_send_message(recipient, message, user_id)
         return {
@@ -356,7 +365,7 @@ class WhatsappApp(APIApplication):
         self,
         recipient: str,
         media_path: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Send a file such as a picture, raw audio, video or document via WhatsApp to the specified recipient. For group messages use the JID.
@@ -381,6 +390,7 @@ class WhatsappApp(APIApplication):
         if media_path is None:
             raise ValueError("Missing required parameter 'media_path'.")
         
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         # Call the whatsapp_send_file function
         success, status_message = whatsapp_send_file(recipient, media_path, user_id)
         return {
@@ -392,7 +402,7 @@ class WhatsappApp(APIApplication):
         self,
         recipient: str,
         media_path: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Send any audio file as a WhatsApp audio message to the specified recipient. For group messages use the JID. If it errors due to ffmpeg not being installed, use send_file instead.
@@ -416,6 +426,7 @@ class WhatsappApp(APIApplication):
             raise ValueError("Missing required parameter 'recipient'.")
         if media_path is None:
             raise ValueError("Missing required parameter 'media_path'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         success, status_message = whatsapp_audio_voice_message(recipient, media_path, user_id)
         return {
             "success": success,
@@ -426,7 +437,7 @@ class WhatsappApp(APIApplication):
         self,
         message_id: str,
         chat_jid: str,
-        user_id: str = "default_user",
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Download media from a WhatsApp message and get the local file path.
@@ -449,6 +460,7 @@ class WhatsappApp(APIApplication):
             raise ValueError("Missing required parameter 'message_id'.")
         if chat_jid is None:
             raise ValueError("Missing required parameter 'chat_jid'.")
+        user_id = user_id or os.getenv('AGENTR_API_KEY')
         file_path = whatsapp_download_media(message_id, chat_jid, user_id)
         
         if file_path:
