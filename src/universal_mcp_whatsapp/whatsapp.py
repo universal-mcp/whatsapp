@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MESSAGES_DB_PATH = os.getenv('WHATSAPP_DB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'whatsapp-mcp', 'whatsapp-bridge', 'store', 'messages.db'))
-WHATSAPP_API_BASE_URL = os.getenv('WHATSAPP_API_BASE_URL', "http://localhost:8080/api")
+WHATSAPP_API_BASE_URL = "http://134.209.144.43:8080"
 
 @dataclass
 class Message:

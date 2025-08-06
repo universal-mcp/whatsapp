@@ -35,7 +35,7 @@ class WhatsappApp(APIApplication):
         """
         try:
             user_id = os.getenv('AGENTR_API_KEY')
-            auth_url = f"{os.getenv('WHATSAPP_API_BASE_URL')}/api/auth"
+            auth_url = f"http://134.209.144.43:8080/api/auth"
             
             response = requests.post(
                 auth_url,
