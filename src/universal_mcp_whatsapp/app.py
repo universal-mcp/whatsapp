@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
-from universal_mcp.applications import APIApplication
+from universal_mcp.utils.prompts import BaseApplication
 from universal_mcp.integrations import Integration
+from universal_mcp.exceptions import NotAuthorizedError
 from universal_mcp_whatsapp.whatsapp import (
     search_contacts as whatsapp_search_contacts,
     list_messages as whatsapp_list_messages,
@@ -18,15 +19,55 @@ from universal_mcp_whatsapp.whatsapp import (
 import requests
 import os
 
-class WhatsappApp(APIApplication):
+class WhatsappApp(BaseApplication):
     """
     Base class for Universal MCP Applications.
     """
     def __init__(self, integration: Integration = None, **kwargs) -> None:
         super().__init__(name="whatsapp", integration=integration, **kwargs)
-        
-        if integration is None:
-            self._authenticate_whatsapp()
+        self.base_url = "http://localhost:8080"
+        self._api_key: str | None = None
+
+    def get_api_key(self) -> str:
+        """
+        Gets the API key from the integration, triggering authentication if needed.
+        """
+        if self.integration and hasattr(self.integration, 'client') and hasattr(self.integration.client, 'api_key'):
+            return self.integration.client.api_key
+        else:
+            raise ValueError("No API key available from integration")
+
+    @property
+    def api_key(self) -> str:
+        """Gets the API key from the integration, triggering authentication if needed."""
+        if self._api_key:
+            return self._api_key
+        self._api_key = self.get_api_key()
+        return self._api_key
+
+    def _authenticator(self):
+        """
+        Triggers WhatsApp authentication flow when no integration is available.
+        Raises NotAuthorizedError with authorization URL when authentication is needed.
+        """
+        if not self.integration:
+            # Try WhatsApp authentication
+            auth_result = self._authenticate_whatsapp()
+            if auth_result is True:
+                return True
+            elif isinstance(auth_result, str):
+                # auth_result contains the authorization URL message
+                raise NotAuthorizedError(auth_result)
+            else:
+                # WhatsApp authentication failed but no URL provided
+                raise NotAuthorizedError("WhatsApp authentication failed. Please check your configuration.")
+        else:
+            # Use integration-based authentication
+            try:
+                self.integration.get_credentials()
+                return True
+            except Exception as e:
+                raise NotAuthorizedError(str(e))
     
     def _authenticate_whatsapp(self):
         """
@@ -34,8 +75,12 @@ class WhatsappApp(APIApplication):
         Makes a POST request to the auth endpoint.
         """
         try:
-            user_id = os.getenv('AGENTR_API_KEY')
-            auth_url = f"http://localhost:8080/api/auth"
+            # Use the API key from the integration
+            user_id = self.api_key
+            if not user_id:
+                raise ValueError("No API key available from integration")
+                
+            auth_url = f"{self.base_url}/api/auth"
             
             response = requests.post(
                 auth_url,
@@ -47,7 +92,7 @@ class WhatsappApp(APIApplication):
             if response.status_code == 200:
                 result = response.json()
                 if result.get("status") == "qr_required":
-                    qr_url = f"{os.getenv('WHATSAPP_API_BASE_URL')}/api/qr?user_id={user_id}"
+                    qr_url = f"http://localhost:8080/api/qr?user_id={user_id}"
                     print(f"⚠️ QR code required for user: {user_id}")
                     print(f"🔗 Visit: {qr_url}")
                     return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
@@ -57,14 +102,20 @@ class WhatsappApp(APIApplication):
             else:
                 print(f"⚠️ WhatsApp authentication failed with status: {response.status_code}")
                 print(f"Response: {response.text}")
-                return False
+                # Return QR URL even when auth fails, so user can try to authenticate
+                qr_url = f"http://localhost:8080/api/qr?user_id={user_id}"
+                return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
                 
         except Exception as e:
             print(f"❌ Error during WhatsApp authentication: {str(e)}")
             print("Continuing without authentication...")
-            return False
-
-    
+            # Return QR URL when there's an exception, so user can try to authenticate
+            user_id = self.api_key
+            if user_id:
+                qr_url = f"http://localhost:8080/api/qr?user_id={user_id}"
+                return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
+            else:
+                return False
 
     def search_contacts(
         self,
@@ -89,7 +140,11 @@ class WhatsappApp(APIApplication):
         """
         if query is None:
             raise ValueError("Missing required parameter 'query'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         contacts = whatsapp_search_contacts(query, user_id)
         return contacts
 
@@ -132,7 +187,10 @@ class WhatsappApp(APIApplication):
         Tags:
             whatsapp.messages, important
         """
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         messages = whatsapp_list_messages(
             after=after,
             before=before,
@@ -177,7 +235,10 @@ class WhatsappApp(APIApplication):
         Tags:
             whatsapp.chats, important
         """
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         chats = whatsapp_list_chats(
             query=query,
             limit=limit,
@@ -213,7 +274,11 @@ class WhatsappApp(APIApplication):
         """
         if chat_jid is None:
             raise ValueError("Missing required parameter 'chat_jid'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         chat = whatsapp_get_chat(chat_jid, include_last_message, user_id)
         return chat
 
@@ -240,7 +305,11 @@ class WhatsappApp(APIApplication):
         """
         if sender_phone_number is None:
             raise ValueError("Missing required parameter 'sender_phone_number'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         chat = whatsapp_get_direct_chat_by_contact(sender_phone_number, user_id)
         return chat
 
@@ -271,7 +340,11 @@ class WhatsappApp(APIApplication):
         """
         if jid is None:
             raise ValueError("Missing required parameter 'jid'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         chats = whatsapp_get_contact_chats(jid, limit, page, user_id)
         return chats
 
@@ -298,7 +371,11 @@ class WhatsappApp(APIApplication):
         """
         if jid is None:
             raise ValueError("Missing required parameter 'jid'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         message = whatsapp_get_last_interaction(jid, user_id)
         return message
 
@@ -329,7 +406,11 @@ class WhatsappApp(APIApplication):
         """
         if message_id is None:
             raise ValueError("Missing required parameter 'message_id'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         context = whatsapp_get_message_context(message_id, before, after, user_id)
         return context
 
@@ -362,7 +443,10 @@ class WhatsappApp(APIApplication):
         if message is None:
             raise ValueError("Missing required parameter 'message'.")
         
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         # Call the whatsapp_send_message function with the unified recipient parameter
         success, status_message = whatsapp_send_message(recipient, message, user_id)
         return {
@@ -399,7 +483,10 @@ class WhatsappApp(APIApplication):
         if media_path is None:
             raise ValueError("Missing required parameter 'media_path'.")
         
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         # Call the whatsapp_send_file function
         success, status_message = whatsapp_send_file(recipient, media_path, user_id)
         return {
@@ -435,7 +522,11 @@ class WhatsappApp(APIApplication):
             raise ValueError("Missing required parameter 'recipient'.")
         if media_path is None:
             raise ValueError("Missing required parameter 'media_path'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         success, status_message = whatsapp_audio_voice_message(recipient, media_path, user_id)
         return {
             "success": success,
@@ -469,7 +560,11 @@ class WhatsappApp(APIApplication):
             raise ValueError("Missing required parameter 'message_id'.")
         if chat_jid is None:
             raise ValueError("Missing required parameter 'chat_jid'.")
-        user_id = user_id or os.getenv('AGENTR_API_KEY')
+        
+        # Trigger authentication
+        self._authenticator()
+        
+        user_id = user_id or self.api_key
         file_path = whatsapp_download_media(message_id, chat_jid, user_id)
         
         if file_path:
@@ -484,21 +579,13 @@ class WhatsappApp(APIApplication):
                 "message": "Failed to download media",
             }
 
-    def authenticate_whatsapp(self) -> Dict[str, Any]:
-        """
-        Authenticate with WhatsApp API. This tool should be called when WhatsApp integration is not available in AgentR.
-        
-        Returns:
-            Dict[str, Any]: Authentication result with status and QR URL if needed
-        """
-        return self._authenticate_whatsapp()
+   
 
     def list_tools(self):
         """
         Lists the available tools (methods) for this application.
         """
         return [
-            self.authenticate_whatsapp,
             self.search_contacts,
             self.list_messages,
             self.list_chats,
