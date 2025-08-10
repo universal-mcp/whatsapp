@@ -120,14 +120,12 @@ class WhatsappApp(BaseApplication):
     def search_contacts(
         self,
         query: str,
-        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Search WhatsApp contacts by name or phone number.
 
         Args:
             query (string): Search term to match against contact names or phone numbers
-            user_id (string): The user ID to search contacts for (default: "default_user")
 
         Returns:
             List[Dict[str, Any]]: Retrieved collection
@@ -144,7 +142,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         contacts = whatsapp_search_contacts(query, user_id)
         return contacts
 
@@ -160,7 +158,6 @@ class WhatsappApp(BaseApplication):
         include_context: bool = True,
         context_before: int = 1,
         context_after: int = 1,
-        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Get WhatsApp messages matching specified criteria with optional context.
@@ -176,7 +173,6 @@ class WhatsappApp(BaseApplication):
             include_context (boolean): Whether to include messages before and after matches (default True)
             context_before (integer): Number of messages to include before each match (default 1)
             context_after (integer): Number of messages to include after each match (default 1)
-            user_id (string): The user ID to get messages for (default: "default_user")
 
         Returns:
             List[Dict[str, Any]]: Retrieved collection
@@ -190,7 +186,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         messages = whatsapp_list_messages(
             after=after,
             before=before,
@@ -213,7 +209,6 @@ class WhatsappApp(BaseApplication):
         page: int = 0,
         include_last_message: bool = True,
         sort_by: str = "last_active",
-        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Get WhatsApp chats matching specified criteria.
@@ -224,7 +219,6 @@ class WhatsappApp(BaseApplication):
             page (integer): Page number for pagination (default 0)
             include_last_message (boolean): Whether to include the last message in each chat (default True)
             sort_by (string): Field to sort results by, either "last_active" or "name" (default "last_active")
-            user_id (string): The user ID to get chats for (default: "default_user")
 
         Returns:
             List[Dict[str, Any]]: Retrieved collection
@@ -238,7 +232,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         chats = whatsapp_list_chats(
             query=query,
             limit=limit,
@@ -253,7 +247,6 @@ class WhatsappApp(BaseApplication):
         self,
         chat_jid: str,
         include_last_message: bool = True,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Get WhatsApp chat metadata by JID.
@@ -261,7 +254,6 @@ class WhatsappApp(BaseApplication):
         Args:
             chat_jid (string): The JID of the chat to retrieve
             include_last_message (boolean): Whether to include the last message (default True)
-            user_id (string): The user ID to get chat for (default: "default_user")
 
         Returns:
             Dict[str, Any]: Retrieved chat metadata
@@ -278,21 +270,19 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         chat = whatsapp_get_chat(chat_jid, include_last_message, user_id)
         return chat
 
     def get_direct_chat_by_contact(
         self,
         sender_phone_number: str,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Get WhatsApp chat metadata by sender phone number.
 
         Args:
             sender_phone_number (string): The phone number to search for
-            user_id (string): The user ID to get chat for (default: "default_user")
 
         Returns:
             Dict[str, Any]: Retrieved chat metadata
@@ -309,7 +299,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         chat = whatsapp_get_direct_chat_by_contact(sender_phone_number, user_id)
         return chat
 
@@ -318,7 +308,6 @@ class WhatsappApp(BaseApplication):
         jid: str,
         limit: int = 20,
         page: int = 0,
-        user_id: str = None,
     ) -> List[Dict[str, Any]]:
         """
         Get all WhatsApp chats involving the contact.
@@ -327,7 +316,6 @@ class WhatsappApp(BaseApplication):
             jid (string): The contact's JID to search for
             limit (integer): Maximum number of chats to return (default 20)
             page (integer): Page number for pagination (default 0)
-            user_id (string): The user ID to get chats for (default: "default_user")
 
         Returns:
             List[Dict[str, Any]]: Retrieved collection
@@ -344,21 +332,19 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         chats = whatsapp_get_contact_chats(jid, limit, page, user_id)
         return chats
 
     def get_last_interaction(
         self,
         jid: str,
-        user_id: str = None,
     ) -> str:
         """
         Get most recent WhatsApp message involving the contact.
 
         Args:
             jid (string): The JID of the contact to search for
-            user_id (string): The user ID to get interaction for (default: "default_user")
 
         Returns:
             string: Retrieved message
@@ -375,7 +361,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         message = whatsapp_get_last_interaction(jid, user_id)
         return message
 
@@ -384,7 +370,6 @@ class WhatsappApp(BaseApplication):
         message_id: str,
         before: int = 5,
         after: int = 5,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Get context around a specific WhatsApp message.
@@ -393,7 +378,6 @@ class WhatsappApp(BaseApplication):
             message_id (string): The ID of the message to get context for
             before (integer): Number of messages to include before the target message (default 5)
             after (integer): Number of messages to include after the target message (default 5)
-            user_id (string): The user ID to get context for (default: "default_user")
 
         Returns:
             Dict[str, Any]: Retrieved message context
@@ -410,7 +394,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         context = whatsapp_get_message_context(message_id, before, after, user_id)
         return context
 
@@ -418,7 +402,6 @@ class WhatsappApp(BaseApplication):
         self,
         recipient: str,
         message: str,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Send a WhatsApp message to a person or group. For group chats use the JID.
@@ -427,7 +410,6 @@ class WhatsappApp(BaseApplication):
             recipient (string): The recipient - either a phone number with country code but no + or other symbols,
                              or a JID (e.g., "123456789@s.whatsapp.net" or a group JID like "123456789@g.us")
             message (string): The message text to send
-            user_id (string): The user ID to send message from (default: "default_user")
 
         Returns:
             Dict[str, Any]: A dictionary containing success status and a status message
@@ -446,7 +428,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         # Call the whatsapp_send_message function with the unified recipient parameter
         success, status_message = whatsapp_send_message(recipient, message, user_id)
         return {
@@ -458,7 +440,6 @@ class WhatsappApp(BaseApplication):
         self,
         recipient: str,
         media_path: str,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Send a file such as a picture, raw audio, video or document via WhatsApp to the specified recipient. For group messages use the JID.
@@ -467,7 +448,6 @@ class WhatsappApp(BaseApplication):
             recipient (string): The recipient - either a phone number with country code but no + or other symbols,
                              or a JID (e.g., "123456789@s.whatsapp.net" or a group JID like "123456789@g.us")
             media_path (string): The absolute path to the media file to send (image, video, document)
-            user_id (string): The user ID to send file from (default: "default_user")
 
         Returns:
             Dict[str, Any]: A dictionary containing success status and a status message
@@ -486,7 +466,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         # Call the whatsapp_send_file function
         success, status_message = whatsapp_send_file(recipient, media_path, user_id)
         return {
@@ -498,7 +478,6 @@ class WhatsappApp(BaseApplication):
         self,
         recipient: str,
         media_path: str,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Send any audio file as a WhatsApp audio message to the specified recipient. For group messages use the JID. If it errors due to ffmpeg not being installed, use send_file instead.
@@ -507,7 +486,6 @@ class WhatsappApp(BaseApplication):
             recipient (string): The recipient - either a phone number with country code but no + or other symbols,
                              or a JID (e.g., "123456789@s.whatsapp.net" or a group JID like "123456789@g.us")
             media_path (string): The absolute path to the audio file to send (will be converted to Opus .ogg if it's not a .ogg file)
-            user_id (string): The user ID to send audio from (default: "default_user")
 
         Returns:
             Dict[str, Any]: A dictionary containing success status and a status message
@@ -526,7 +504,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         success, status_message = whatsapp_audio_voice_message(recipient, media_path, user_id)
         return {
             "success": success,
@@ -537,7 +515,6 @@ class WhatsappApp(BaseApplication):
         self,
         message_id: str,
         chat_jid: str,
-        user_id: str = None,
     ) -> Dict[str, Any]:
         """
         Download media from a WhatsApp message and get the local file path.
@@ -545,7 +522,6 @@ class WhatsappApp(BaseApplication):
         Args:
             message_id (string): The ID of the message containing the media
             chat_jid (string): The JID of the chat containing the message
-            user_id (string): The user ID to download media for (default: "default_user")
 
         Returns:
             Dict[str, Any]: A dictionary containing success status, a status message, and the file path if successful
@@ -564,7 +540,7 @@ class WhatsappApp(BaseApplication):
         # Trigger authentication
         self._authenticator()
         
-        user_id = user_id or self.api_key
+        user_id = self.api_key
         file_path = whatsapp_download_media(message_id, chat_jid, user_id)
         
         if file_path:
