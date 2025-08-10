@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from universal_mcp.utils.prompts import BaseApplication
+from universal_mcp.applications import BaseApplication
 from universal_mcp.integrations import Integration
 from universal_mcp.exceptions import NotAuthorizedError
 from universal_mcp_whatsapp.whatsapp import (
