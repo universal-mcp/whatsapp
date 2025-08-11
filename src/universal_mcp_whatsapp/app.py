@@ -24,10 +24,10 @@ class WhatsappApp(BaseApplication):
     """
     Base class for Universal MCP Applications.
     """
-    def __init__(self, integration: AgentRIntegration, **kwargs) -> None:
+    def __init__(self, integration: AgentRIntegration | None = None, **kwargs) -> None:
         super().__init__(name="whatsapp", integration=integration, **kwargs)
         self.base_url = WHATSAPP_API_BASE_URL
-        self._api_key: str = integration.client.api_key
+        self._api_key: str = integration.client.api_key if integration else None
 
     def get_api_key(self) -> str:
         return self._api_key
