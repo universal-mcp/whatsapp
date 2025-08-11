@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from universal_mcp.applications import BaseApplication
-from universal_mcp.integrations import Integration
+from universal_mcp.integrations import AgentRIntegration
 from universal_mcp.exceptions import NotAuthorizedError
 from universal_mcp_whatsapp.whatsapp import (
     search_contacts as whatsapp_search_contacts,
@@ -24,19 +24,13 @@ class WhatsappApp(BaseApplication):
     """
     Base class for Universal MCP Applications.
     """
-    def __init__(self, integration: Integration = None, **kwargs) -> None:
+    def __init__(self, integration: AgentRIntegration, **kwargs) -> None:
         super().__init__(name="whatsapp", integration=integration, **kwargs)
         self.base_url = WHATSAPP_API_BASE_URL
-        self._api_key: str | None = None
+        self._api_key: str = integration.client.api_key
 
     def get_api_key(self) -> str:
-        """
-        Gets the API key from the integration, triggering authentication if needed.
-        """
-        if self.integration and hasattr(self.integration, 'client') and hasattr(self.integration.client, 'api_key'):
-            return self.integration.client.api_key
-        else:
-            raise ValueError("No API key available from integration")
+        return self._api_key
 
     @property
     def api_key(self) -> str:
@@ -51,26 +45,20 @@ class WhatsappApp(BaseApplication):
         Triggers WhatsApp authentication flow when no integration is available.
         Raises NotAuthorizedError with authorization URL when authentication is needed.
         """
-        if not self.integration:
-            # Try WhatsApp authentication
-            auth_result = self._authenticate_whatsapp()
-            if auth_result is True:
-                return True
-            elif isinstance(auth_result, str):
-                # auth_result contains the authorization URL message
-                raise NotAuthorizedError(auth_result)
-            else:
-                # WhatsApp authentication failed but no URL provided
-                raise NotAuthorizedError("WhatsApp authentication failed. Please check your configuration.")
+        
+        # Try WhatsApp authentication
+        auth_result = self._authenticate_whatsapp()
+        if auth_result[0] is True:
+            return True
+        elif isinstance(auth_result[1], str):
+            # auth_result contains the authorization URL message
+            raise NotAuthorizedError(auth_result[1])
         else:
-            # Use integration-based authentication
-            try:
-                self.integration.get_credentials()
-                return True
-            except Exception as e:
-                raise NotAuthorizedError(str(e))
+            # WhatsApp authentication failed but no URL provided
+            raise NotAuthorizedError("WhatsApp authentication failed. Please check your configuration.")
+
     
-    def _authenticate_whatsapp(self):
+    def _authenticate_whatsapp(self) -> tuple[bool, str]:
         """
         Authenticate with WhatsApp API when no integration is available.
         Makes a POST request to the auth endpoint.
@@ -96,16 +84,16 @@ class WhatsappApp(BaseApplication):
                     qr_url = f"{self.base_url}/api/qr?user_id={user_id}"
                     print(f"⚠️ QR code required for user: {user_id}")
                     print(f"🔗 Visit: {qr_url}")
-                    return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
+                    return (False, f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link.")
                 elif result.get("status") == "connected":
                     print(f"✅ User {user_id} already authenticated")
-                    return True
+                    return (True, "User already authenticated")
             else:
                 print(f"⚠️ WhatsApp authentication failed with status: {response.status_code}")
                 print(f"Response: {response.text}")
                 # Return QR URL even when auth fails, so user can try to authenticate
                 qr_url = f"{self.base_url}/api/qr?user_id={user_id}"
-                return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
+                return (False, f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link.")
                 
         except Exception as e:
             print(f"❌ Error during WhatsApp authentication: {str(e)}")
@@ -114,9 +102,9 @@ class WhatsappApp(BaseApplication):
             user_id = self.api_key
             if user_id:
                 qr_url = f"{self.base_url}/api/qr?user_id={user_id}"
-                return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
+                return (False, f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link.")
             else:
-                return False
+                return (False, "No API key available from integration")
 
     def search_contacts(
         self,
