@@ -15,6 +15,7 @@ from universal_mcp_whatsapp.whatsapp import (
     send_file as whatsapp_send_file,
     send_audio_message as whatsapp_audio_voice_message,
     download_media as whatsapp_download_media,
+    WHATSAPP_API_BASE_URL
 )
 import requests
 import os
@@ -25,7 +26,7 @@ class WhatsappApp(BaseApplication):
     """
     def __init__(self, integration: Integration = None, **kwargs) -> None:
         super().__init__(name="whatsapp", integration=integration, **kwargs)
-        self.base_url = "http://localhost:8080"
+        self.base_url = WHATSAPP_API_BASE_URL
         self._api_key: str | None = None
 
     def get_api_key(self) -> str:
@@ -88,11 +89,11 @@ class WhatsappApp(BaseApplication):
                 json={"user_id": user_id},
                 timeout=60
             )
-            
+
             if response.status_code == 200:
                 result = response.json()
                 if result.get("status") == "qr_required":
-                    qr_url = f"http://localhost:8080/api/qr?user_id={user_id}"
+                    qr_url = f"{self.base_url}/api/qr?user_id={user_id}"
                     print(f"⚠️ QR code required for user: {user_id}")
                     print(f"🔗 Visit: {qr_url}")
                     return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
@@ -103,7 +104,7 @@ class WhatsappApp(BaseApplication):
                 print(f"⚠️ WhatsApp authentication failed with status: {response.status_code}")
                 print(f"Response: {response.text}")
                 # Return QR URL even when auth fails, so user can try to authenticate
-                qr_url = f"http://localhost:8080/api/qr?user_id={user_id}"
+                qr_url = f"{self.base_url}/api/qr?user_id={user_id}"
                 return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
                 
         except Exception as e:
@@ -112,7 +113,7 @@ class WhatsappApp(BaseApplication):
             # Return QR URL when there's an exception, so user can try to authenticate
             user_id = self.api_key
             if user_id:
-                qr_url = f"http://localhost:8080/api/qr?user_id={user_id}"
+                qr_url = f"{self.base_url}/api/qr?user_id={user_id}"
                 return f"Please ask the user to visit the following url to authorize WhatsApp: {qr_url}. Render the url in proper markdown format with a clickable link."
             else:
                 return False

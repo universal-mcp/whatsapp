@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-WHATSAPP_API_BASE_URL = os.getenv('WHATSAPP_API_BASE_URL', "http://localhost:8080")
+WHATSAPP_API_BASE_URL = os.getenv('WHATSAPP_API_BASE_URL', "http://134.209.144.43:8080")
 
 @dataclass
 class Message:

@@ -22,8 +22,10 @@ classifiers = [
 ]
 # Add runtime dependencies here if any are known upfront
 dependencies = [
-    "universal-mcp==0.1.24rc2",
+    "universal-mcp==0.1.23",
     "python-dotenv>=1.0.0",
+    "pytest>=8.4.1",
+    "langgraph>=0.6.4",
 ]
 
 [project.optional-dependencies]
